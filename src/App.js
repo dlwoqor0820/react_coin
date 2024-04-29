@@ -1,66 +1,11 @@
 import { useEffect, useState } from "react";
 
-function App() {
-    const [isSwap, setSwap] = useState(false);
-    const [coins, setCoins] = useState([""]);
+const App = () => {
+    const [coins, setCoins] = useState([]);
     const [cryptoData, setCryptoData] = useState({});
-    const [amount, setAmount] = useState(0);
-
-    const Dollor = () => {
-        return (
-            <div>
-                <input
-                    value={amount}
-                    type="number"
-                    onChange={converting}
-                    disabled={isSwap}
-                    placeholder={0}
-                ></input>
-                <span> Dollor</span>
-            </div>
-        );
-    };
-
-    const Coin = () => {
-        return (
-            <div>
-                <input
-                    value={amount}
-                    type="number"
-                    onChange={converting}
-                    disabled={!isSwap}
-                    placeholder={0}
-                ></input>
-                <span> {cryptoData ? cryptoData.symbol : "BTC"}</span>
-            </div>
-        );
-    };
-
-    const SwapBtn = () => {
-        return (
-            <div>
-                <button onClick={swap}>Swap</button>
-            </div>
-        );
-    };
-
-    const swap = () => {
-        setSwap(!isSwap);
-    };
-
-    const selectCoin = (e) => {
-        const coinIndex = e.target.selectedIndex;
-        setCryptoData({
-            name: coins[coinIndex].name,
-            symbol: coins[coinIndex].symbol,
-            price: coins[coinIndex].quotes.USD.price,
-        });
-    };
-
-    const converting = (e) => {
-        const value = e.target.value;
-        setAmount(value);
-    };
+    const [isSwaped, setIsSwaped] = useState(false);
+    const [current, setCurrent] = useState();
+    const [value, setValue] = useState("");
 
     useEffect(() => {
         fetch("https://api.coinpaprika.com/v1/tickers?limit=50")
@@ -75,29 +20,80 @@ function App() {
             });
     }, []);
 
+    const onSwapClick = () => {
+        setIsSwaped((prev) => !prev);
+        reset();
+    };
+
+    const onSelectChange = (e) => {
+        const index = e.target.selectedIndex;
+        setCryptoData({
+            name: coins[index].name,
+            symbol: coins[index].symbol,
+            price: coins[index].quotes.USD.price,
+        });
+        setCurrent(`${coins[index].name} (${coins[index].symbol})`);
+        reset();
+    };
+
+    const onConvertChange = (e) => {
+        setValue(e.target.value);
+    };
+
+    const reset = () => {
+        setValue("");
+    };
+
+    const SwapBtn = () => {
+        return <button onClick={onSwapClick}>Swap</button>;
+    };
+
+    const SelectBar = () => {
+        return (
+            <select
+                onChange={onSelectChange}
+                value={current ? current : null}
+            >
+                {coins.map((coin) => {
+                    return (
+                        <option key={coin.id}>
+                            {coin.name} ({coin.symbol})
+                        </option>
+                    );
+                })}
+            </select>
+        );
+    };
+
     return (
         <div>
             <h1>Coin Converter</h1>
-            {coins !== "" ? (
-                <div>
-                    <select onChange={selectCoin}>
-                        {coins.map((coin) => {
-                            return (
-                                <option>
-                                    {coin.name} ({coin.symbol})
-                                </option>
-                            );
-                        })}
-                    </select>
-                    <Dollor />
-                    <SwapBtn />
-                    <Coin />
-                </div>
-            ) : (
-                <h3>Loading...</h3>
-            )}
+            <hr></hr>
+            <SelectBar />
+            <hr></hr>
+            <div>
+                <input
+                    type="number"
+                    onChange={onConvertChange}
+                    disabled={isSwaped}
+                    value={isSwaped ? value * cryptoData.price : value}
+                    placeholder={0}
+                ></input>
+                <span> Dollor</span>
+            </div>
+            <SwapBtn setIsSwaped={setIsSwaped} />
+            <div>
+                <input
+                    type="number"
+                    onChange={onConvertChange}
+                    disabled={!isSwaped}
+                    value={isSwaped ? value : value / cryptoData.price}
+                    placeholder={0}
+                ></input>
+                <span> {cryptoData.symbol}</span>
+            </div>
         </div>
     );
-}
+};
 
 export default App;
